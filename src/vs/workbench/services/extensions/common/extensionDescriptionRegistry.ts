@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
+import { ExtensionIdentifier, getImplicitActivationEvents, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { Emitter } from 'vs/base/common/event';
 import * as path from 'vs/base/common/path';
 
@@ -46,7 +46,8 @@ export class ExtensionDescriptionRegistry {
 			this._extensionsArr.push(extensionDescription);
 
 			if (Array.isArray(extensionDescription.activationEvents)) {
-				for (let activationEvent of extensionDescription.activationEvents) {
+				const activationEvents = this.getExplicitAndImplicitActivationEvents(extensionDescription);
+				for (let activationEvent of activationEvents) {
 					// TODO@joao: there's no easy way to contribute this
 					if (activationEvent === 'onUri') {
 						activationEvent = `onUri:${ExtensionIdentifier.toKey(extensionDescription.identifier)}`;
@@ -59,6 +60,16 @@ export class ExtensionDescriptionRegistry {
 				}
 			}
 		}
+	}
+
+	private getExplicitAndImplicitActivationEvents(extensionDescription: IExtensionDescription): string[] {
+		const activationEvents: Set<string> = extensionDescription.contributes ? new Set(getImplicitActivationEvents(extensionDescription.contributes)) : new Set();
+
+		for (const activationEvent of extensionDescription.activationEvents ?? []) {
+			activationEvents.add(activationEvent);
+		}
+
+		return [...activationEvents.keys()];
 	}
 
 	public set(extensionDescriptions: IExtensionDescription[]) {

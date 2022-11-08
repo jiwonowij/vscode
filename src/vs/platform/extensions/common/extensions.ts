@@ -202,6 +202,39 @@ export interface IExtensionContributions {
 	readonly notebookRenderer?: INotebookRendererContribution[];
 }
 
+
+export function getImplicitActivationEvents(extensionContributions: IExtensionContributions): string[] {
+	const activationEvents: string[] = [];
+	if (!extensionContributions) {
+		return activationEvents;
+	}
+
+	for (const command of (extensionContributions.commands ?? [])) {
+		activationEvents.push(`onCommand:${command.command}`);
+	}
+
+	for (const notebook of (extensionContributions.notebooks ?? [])) {
+		activationEvents.push(`onNotebookSerializer:${notebook.type}`);
+	}
+
+	for (const authentication of (extensionContributions.authentication ?? [])) {
+		activationEvents.push(`onAuthenticationRequest:${authentication.id}`);
+	}
+
+	for (const customEditor of (extensionContributions.customEditors ?? [])) {
+		activationEvents.push(`onCustomEditor:${customEditor.viewType}`);
+	}
+
+	for (const viewLocation of (Object.values(extensionContributions.views ?? {}))) {
+		for (const view of viewLocation) {
+			activationEvents.push(`onView:${view.id}`);
+		}
+	}
+
+	// TODO: viewContainers, languages, debuggers
+	return activationEvents;
+}
+
 export interface IExtensionCapabilities {
 	readonly virtualWorkspaces?: ExtensionVirtualWorkspaceSupport;
 	readonly untrustedWorkspaces?: ExtensionUntrustedWorkspaceSupport;
